@@ -1,0 +1,11 @@
+heroku login
+git init
+git add .
+git commit -m "Prepare for Heroku deployment"
+heroku create my-social-dashboard
+heroku config:set REDDIT_CLIENT_ID=your_id_here REDDIT_CLIENT_SECRET=your_secret_here REDDIT_USER_AGENT="MyApp/1.0"
+heroku config:set TWITTER_BEARER_TOKEN=your_bearer_token_here
+heroku config:set YOUTUBE_API_KEY=your_google_api_key_here
+git push heroku main
+heroku ps:scale web=1
+heroku open
