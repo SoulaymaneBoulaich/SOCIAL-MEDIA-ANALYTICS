@@ -588,7 +588,6 @@ Create an issue on GitHub describing:
 ## 🙏 Acknowledgments
 
 - **Reddit API** - PRAW library
-- **Twitter API** - Tweepy library
 - **YouTube API** - Google API Client
 - **VADER** - Sentiment analysis tool
 - **Plotly** - Interactive visualizations
