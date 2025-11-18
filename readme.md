@@ -1,5 +1,5 @@
 
-> **A complete, beginner-friendly project that collects data from Reddit, Twitter, and YouTube, analyzes sentiment, and displays beautiful interactive dashboards - optimized for Windows!**
+> **A complete, beginner-friendly project that collects data from Reddit,YouTube, analyzes sentiment, and displays beautiful interactive dashboards - optimized for Windows!**
 
 This project is perfect for learning about data science, APIs, databases, and web development all in one place!
 
@@ -32,9 +32,8 @@ Imagine you want to know what people are saying about "Python programming" acros
 
 **Example Output:**
 ```
-📊 Total collected: 150 posts
-   - 50 from Reddit
-   - 50 from Twitter  
+📊 Total collected: 100 posts
+   - 50 from Reddit 
    - 50 from YouTube
 
 🔍 Sentiment Analysis:
@@ -61,7 +60,7 @@ By completing this project, you'll understand:
 - ✅ **Environment Variables** - Keeping API keys secure
 # Social Media Analytics (SMA)
 
-A compact, modular Python project that collects social media content (Reddit, Twitter/X, YouTube), performs text cleaning and sentiment analysis, stores results in an SQLite database, and presents insights in an interactive Plotly Dash dashboard.
+A compact, modular Python project that collects social media content (Reddit,YouTube), performs text cleaning and sentiment analysis, stores results in an SQLite database, and presents insights in an interactive Plotly Dash dashboard.
 
 This README covers quick setup, main files, running the pipeline and dashboard, and deployment notes. It is intentionally concise — let me know if you want a longer developer guide or a short `FILES.md` that documents each module in detail.
 
@@ -119,7 +118,6 @@ Important: Never commit `.env` to the repository. Add secrets to your host servi
 
 - `pipeline.py`: Orchestrator — collects from sources, runs processing and sentiment analysis, and stores results to SQLite.
 - `collect_data.py`: Reddit collector (PRAW) — fetches posts and metadata from subreddits.
-- `collect_twitter.py`: Twitter/X collector (Tweepy) — fetches tweets using a query (may require elevated access).
 - `collect_youtube.py`: YouTube comment collector (Google API client) — searches videos and retrieves comments.
 - `process_data.py`: Text cleaning and preparation utilities (creates `full_text` used for sentiment analysis).
 - `sentiment_analysis.py`: Applies VADER and returns sentiment scores/labels per post.
@@ -169,198 +167,6 @@ Contributions welcome. Open a PR with a clear description and small, focused cha
 
 ---
 
-## License
-
-MIT. See `LICENSE` for details.
-
----
-
-If you want further changes I can:
-
-- remove remaining emoji characters across the repository, or
-- polish the dashboard theme/layout, or
-- generate a `FILES.md` describing each main file in one paragraph.
-
-Tell me which and I will implement it and (optionally) push to your GitHub remote.
-            id='sentiment-over-time',
-            figure=create_sentiment_timeline(df)
-        )
-    ], style={'marginBottom': '30px'}),
-    
-    # Platform Distribution
-    html.Div([
-        dcc.Graph(
-            id='platform-distribution',
-            figure=create_platform_pie(df)
-        )
-    ], style={'marginBottom': '30px'}),
-    
-    # Top Posts Table
-    html.Div([
-        html.H2('Top Posts by Score', style={'color': COLORS['text'], 'marginBottom': '20px'}),
-        create_top_posts_table(df)
-    ])
-])
-
-def create_sentiment_by_platform(df):
-    """Create stacked bar chart of sentiment by platform"""
-    if df.empty:
-        return go.Figure()
-    
-    sentiment_counts = df.groupby(['platform', 'sentiment_label']).size().reset_index(name='count')
-    
-    fig = px.bar(
-        sentiment_counts,
-        x='platform',
-        y='count',
-        color='sentiment_label',
-        title='Sentiment Distribution by Platform',
-        color_discrete_map={
-            'positive': COLORS['positive'],
-            'neutral': COLORS['neutral'],
-            'negative': COLORS['negative']
-        },
-        labels={'count': 'Number of Posts', 'platform': 'Platform', 'sentiment_label': 'Sentiment'}
-    )
-    
-    fig.update_layout(
-        plot_bgcolor=COLORS['background'],
-        paper_bgcolor=COLORS['background'],
-        font_color=COLORS['text'],
-        title_font_size=20
-    )
-    
-    return fig
-
-def create_sentiment_timeline(df):
-    """Create line chart showing sentiment over time"""
-    if df.empty:
-        return go.Figure()
-    
-    # Convert to datetime if needed
-    df['created_utc'] = pd.to_datetime(df['created_utc'])
-    df['date'] = df['created_utc'].dt.date
-    
-    # Count sentiments by date
-    timeline_data = df.groupby(['date', 'sentiment_label']).size().reset_index(name='count')
-    
-    fig = px.line(
-        timeline_data,
-        x='date',
-        y='count',
-        color='sentiment_label',
-        title='Sentiment Trends Over Time',
-        color_discrete_map={
-            'positive': COLORS['positive'],
-            'neutral': COLORS['neutral'],
-            'negative': COLORS['negative']
-        },
-        labels={'count': 'Number of Posts', 'date': 'Date', 'sentiment_label': 'Sentiment'}
-    )
-    
-    fig.update_layout(
-        plot_bgcolor=COLORS['background'],
-        paper_bgcolor=COLORS['background'],
-        font_color=COLORS['text'],
-        title_font_size=20
-    )
-    
-    return fig
-
-def create_platform_pie(df):
-    """Create pie chart of posts by platform"""
-    if df.empty:
-        return go.Figure()
-    
-    platform_counts = df['platform'].value_counts().reset_index()
-    platform_counts.columns = ['platform', 'count']
-    
-    fig = px.pie(
-        platform_counts,
-        values='count',
-        names='platform',
-        title='Posts by Platform',
-        color_discrete_sequence=['#E74C3C', '#3498DB', '#2ECC71']
-    )
-    
-    fig.update_layout(
-        plot_bgcolor=COLORS['background'],
-        paper_bgcolor=COLORS['background'],
-        font_color=COLORS['text'],
-        title_font_size=20
-    )
-    
-    return fig
-
-def create_top_posts_table(df):
-    """Create a table showing top posts by score"""
-    if df.empty:
-        return html.Div("No data available")
-    
-    top_posts = df.nlargest(10, 'score')[['platform', 'title', 'text', 'score', 'sentiment_label']]
-    
-    # Truncate text for display
-    top_posts['text'] = top_posts['text'].str[:100] + '...'
-    top_posts['title'] = top_posts['title'].str[:50]
-    
-    rows = []
-    for _, row in top_posts.iterrows():
-        sentiment_color = {
-            'positive': COLORS['positive'],
-            'neutral': COLORS['neutral'],
-            'negative': COLORS['negative']
-        }.get(row['sentiment_label'], '#FFF')
-        
-        rows.append(html.Tr([
-            html.Td(row['platform'].upper(), style={'color': '#FFF', 'padding': '10px'}),
-            html.Td(row['title'] if row['title'] else row['text'], 
-                   style={'color': '#FFF', 'padding': '10px', 'maxWidth': '400px'}),
-            html.Td(str(row['score']), style={'color': '#FFF', 'padding': '10px'}),
-            html.Td(row['sentiment_label'].upper(), 
-                   style={'color': sentiment_color, 'padding': '10px', 'fontWeight': 'bold'})
-        ]))
-    
-    table = html.Table([
-        html.Thead(html.Tr([
-            html.Th('Platform', style={'color': COLORS['text'], 'padding': '10px'}),
-            html.Th('Content', style={'color': COLORS['text'], 'padding': '10px'}),
-            html.Th('Score', style={'color': COLORS['text'], 'padding': '10px'}),
-            html.Th('Sentiment', style={'color': COLORS['text'], 'padding': '10px'})
-        ])),
-        html.Tbody(rows)
-    ], style={'width': '100%', 'backgroundColor': '#1E1E1E', 'borderRadius': '10px'})
-    
-    return table
-
-if __name__ == '__main__':
-    print("\n" + "="*60)
-    print("🚀 Starting Dashboard Server...")
-    print("="*60)
-    print("\n📊 Dashboard running at: http://127.0.0.1:8050")
-    print("\nPress Ctrl+C to stop\n")
-    
-    app.run_server(debug=True, host='127.0.0.1', port=8050)
-```
-
-**Save and close**
-
-### Run the Dashboard
-
-```cmd
-python dashboard.py
-```
-
-**Open your browser and go to:** `http://127.0.0.1:8050`
-
-You'll see a beautiful interactive dashboard with:
-- Summary statistics
-- Sentiment distribution by platform
-- Sentiment trends over time
-- Platform distribution pie chart
-- Top posts table
-
----
-
 ## 🔧 Troubleshooting
 
 ### Problem: "Python is not recognized"
@@ -407,14 +213,6 @@ REDDIT_CLIENT_SECRET=secretkey123456789
 ```env
 REDDIT_CLIENT_ID = "abc123xyz789"    # No quotes or spaces!
 ```
-
-### Problem: Twitter API "Could not authenticate"
-
-**Solution:**
-1. Make sure you have Essential access (free tier)
-2. Generate a new Bearer Token
-3. Update `.env` file
-4. Twitter may have rate limits - wait 15 minutes and try again
 
 ### Problem: YouTube API quota exceeded
 
@@ -491,9 +289,6 @@ Edit `pipeline.py` and modify these lines:
 ```python
 # Change subreddit
 df_reddit = collect_reddit_posts('gaming', limit=50)  # Changed from 'datascience'
-
-# Change Twitter query
-df_twitter = collect_twitter_tweets('artificial intelligence', limit=50)
 
 # Change YouTube query
 df_youtube = collect_youtube_comments('react tutorial', limit=50)
@@ -773,77 +568,6 @@ pip install --upgrade -r requirements.txt
 **Q: The dashboard doesn't update automatically**
 A: The dashboard shows data from the database. Run `pipeline.py` to collect new data, then refresh the browser.
 
----
-
-## 🎓 What You've Learned
-
-Congratulations! By completing this project, you now know:
-
-✅ **API Integration** - Connected to 3 different social media APIs  
-✅ **Data Collection** - Scraped real-world data from multiple sources  
-✅ **Data Processing** - Cleaned and transformed messy text data  
-✅ **NLP** - Analyzed sentiment using VADER  
-✅ **Database** - Stored and retrieved data with SQLite  
-✅ **Visualization** - Created interactive dashboards with Plotly Dash  
-✅ **Automation** - Scheduled tasks to run automatically  
-✅ **Windows Development** - Set up Python projects on Windows  
-✅ **Best Practices** - Used virtual environments, .env files, and modular code  
-
----
-
-## 📚 Next Steps
-
-### Beginner Projects to Try Next:
-1. **Weather Dashboard** - Track weather across cities
-2. **Stock Price Tracker** - Monitor stock prices and trends
-3. **News Aggregator** - Collect and categorize news articles
-4. **Personal Finance Tracker** - Track expenses and budget
-
-### Intermediate Projects:
-1. **Machine Learning Classifier** - Train custom sentiment models
-2. **Chatbot** - Build a conversational AI
-3. **Recommendation System** - Suggest content based on preferences
-4. **Real-time Stream Processor** - Process live social media streams
-
-### Advanced Projects:
-1. **Full Stack Web App** - Add user authentication and profiles
-2. **Mobile App** - Create iOS/Android app
-3. **Microservices Architecture** - Split into multiple services
-4. **MLOps Pipeline** - Deploy ML models to production
-
----
-
-## 🌟 Show Off Your Project!
-
-### Share on LinkedIn:
-```
-🚀 Just completed my Social Media Analytics Pipeline project!
-
-Built a system that:
-✅ Collects data from Reddit, Twitter & YouTube
-✅ Analyzes sentiment using NLP
-✅ Stores data in SQLite database
-✅ Visualizes insights in interactive dashboard
-
-Technologies: Python, Pandas, Plotly, APIs, NLP, SQLite
-
-#DataScience #Python #MachineLearning #NLP #Analytics
-
-[Link to GitHub repo]
-```
-
-### Add to Your Resume:
-```
-SOCIAL MEDIA ANALYTICS PIPELINE | Python, NLP, APIs
-• Engineered data collection pipeline integrating 3 social media APIs (Reddit, Twitter, YouTube)
-• Implemented sentiment analysis using VADER, processing 500+ posts daily
-• Built interactive Plotly Dash dashboard visualizing sentiment trends across platforms
-• Automated data collection and storage using SQLite database and task scheduling
-• Technologies: Python, Pandas, NLTK, REST APIs, Plotly, SQLAlchemy
-```
-
----
-
 ## 🤝 Contributing & Getting Help
 
 ### Need Help?
@@ -854,22 +578,12 @@ SOCIAL MEDIA ANALYTICS PIPELINE | Python, NLP, APIs
   - [Pandas](https://pandas.pydata.org/docs/)
   - [Plotly](https://plotly.com/python/)
   - [PRAW (Reddit)](https://praw.readthedocs.io/)
-  - [Tweepy](https://docs.tweepy.org/)
-
 ### Found a Bug?
 Create an issue on GitHub describing:
 1. What you expected to happen
 2. What actually happened
 3. Error messages
 4. Steps to reproduce
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - feel free to use it for learning, personal projects, or commercial applications!
-
----
 
 ## 🙏 Acknowledgments
 
@@ -889,5 +603,3 @@ This project is licensed under the MIT License - feel free to use it for learnin
 ---
 
 *Last Updated: November 2025*  
-*Version: 1.0.0 (Windows Edition)*  
-*Platform: Windows 10/11*
