@@ -1,5 +1,4 @@
 
-<<<<<<< HEAD
 > **A complete, beginner-friendly project that collects data from Reddit, Twitter, and YouTube, analyzes sentiment, and displays beautiful interactive dashboards - optimized for Windows!**
 
 This project is perfect for learning about data science, APIs, databases, and web development all in one place!
@@ -60,48 +59,49 @@ By completing this project, you'll understand:
 - ✅ **Automation** - Scheduling tasks to run automatically
 - ✅ **Virtual Environments** - Managing Python dependencies properly
 - ✅ **Environment Variables** - Keeping API keys secure
-## Social Media Analytics (SMA)
+# Social Media Analytics (SMA)
 
-A modular Python project that collects social media data (Reddit, Twitter, YouTube), performs text cleaning and sentiment analysis, stores results in SQLite, and exposes an interactive Plotly Dash dashboard.
+A compact, modular Python project that collects social media content (Reddit, Twitter/X, YouTube), performs text cleaning and sentiment analysis, stores results in an SQLite database, and presents insights in an interactive Plotly Dash dashboard.
 
-This repository contains the core code and instructions to run the pipeline locally on Windows (also works on macOS/Linux with minor path differences).
+This README covers quick setup, main files, running the pipeline and dashboard, and deployment notes. It is intentionally concise — let me know if you want a longer developer guide or a short `FILES.md` that documents each module in detail.
 
 ---
 
 ## Quick Start
 
-1. Clone the repository:
+1. Clone the repository and change into it:
 
-    git clone https://github.com/SoulaymaneBoulaich/SOCIAL-MEDIA-ANALYTICS.git
-    cd SOCIAL-MEDIA-ANALYTICS
+    `git clone https://github.com/SoulaymaneBoulaich/SOCIAL-MEDIA-ANALYTICS.git`
+    `cd SOCIAL-MEDIA-ANALYTICS`
 
 2. Create and activate a virtual environment (Windows):
 
-    python -m venv .venv
-    .venv\Scripts\activate
+    `python -m venv .venv`
+    `.venv\Scripts\activate`
 
 3. Install dependencies:
 
-    pip install -r requirements.txt
+    `pip install -r requirements.txt`
 
-4. Create a `.env` file in the project root containing your API keys (example below).
+4. Create a `.env` file in the project root with your API credentials (example below).
 
 5. Run the pipeline to collect data and populate the database:
 
-    python pipeline.py
+    `python pipeline.py`
 
-6. Start the dashboard:
+6. Start the dashboard (runs on port 8050 by default):
 
-    python dashboard.py
+    `python dashboard.py`
 
-Open http://127.0.0.1:8050 in your browser to view the dashboard.
+Open `http://127.0.0.1:8050` in your browser to view the dashboard.
 
 ---
 
-## Environment variables (.env)
+## Environment variables (`.env`)
 
-Create a `.env` file with these entries:
+Create a `.env` file in the project root with at least the keys you will use. Example:
 
+```
 REDDIT_CLIENT_ID=your_reddit_client_id
 REDDIT_CLIENT_SECRET=your_reddit_client_secret
 REDDIT_USER_AGENT=YourApp/1.0
@@ -109,77 +109,79 @@ REDDIT_USER_AGENT=YourApp/1.0
 TWITTER_BEARER_TOKEN=your_twitter_bearer_token
 
 YOUTUBE_API_KEY=your_youtube_api_key
+```
 
-Do not commit `.env` to source control.
+Important: Never commit `.env` to the repository. Add secrets to your host service's secret manager when deploying.
 
 ---
 
 ## Main Files (what they do)
 
-- `pipeline.py`: Main orchestration script. Collects data from all sources, processes and analyzes it, then stores results in the SQLite database.
-- `collect_data.py`: Reddit collector (PRAW). Fetches posts and metadata from subreddits.
-- `collect_twitter.py`: Twitter/X collector (Tweepy). Fetches tweets based on a query. (May be optional depending on API access.)
-- `collect_youtube.py`: YouTube comment collector (Google API client). Searches for a video and retrieves comments.
-- `process_data.py`: Data cleaning utilities (remove URLs, special characters, normalize text) and preparation of `full_text` column.
-- `sentiment_analysis.py`: Sentiment scoring using VADER; returns compound scores and labels.
-- `database.py`: Lightweight manager for SQLite storage (create tables, insert posts, deduplicate, simple queries).
-- `dashboard.py`: Plotly Dash application that reads the database and renders interactive charts and tables.
-- `requirements.txt`: Python package dependencies.
-- `.gitignore`: Ensures `.venv`, `.env`, DB files, and caches are not committed.
+- `pipeline.py`: Orchestrator — collects from sources, runs processing and sentiment analysis, and stores results to SQLite.
+- `collect_data.py`: Reddit collector (PRAW) — fetches posts and metadata from subreddits.
+- `collect_twitter.py`: Twitter/X collector (Tweepy) — fetches tweets using a query (may require elevated access).
+- `collect_youtube.py`: YouTube comment collector (Google API client) — searches videos and retrieves comments.
+- `process_data.py`: Text cleaning and preparation utilities (creates `full_text` used for sentiment analysis).
+- `sentiment_analysis.py`: Applies VADER and returns sentiment scores/labels per post.
+- `database.py`: Manages SQLite storage (create tables, insert/update posts, simple queries).
+- `dashboard.py`: Plotly Dash app that queries the database and renders interactive charts and tables.
+- `requirements.txt`: Pin list of Python dependencies for reproducible installs.
+- `.gitignore`: Keeps virtual env, DB files, and secrets out of version control.
 
 ---
 
 ## Running and Testing
 
-- Test imports and environment quickly:
+- Quick import check:
 
-  python test_imports.py
+    `python test_imports.py`
 
-- Run the full pipeline:
+- Run the full pipeline (collect → process → sentiment → save):
 
-  python pipeline.py
+    `python pipeline.py`
 
 - Start the dashboard:
 
-  python dashboard.py
+    `python dashboard.py`
 
-If the dashboard shows no data, run the pipeline first and then refresh the page.
+If the dashboard is empty, run the pipeline first, then refresh the dashboard.
 
 ---
 
 ## Notes and Best Practices
 
-- Keep API keys out of version control. Use `.env` and a `.gitignore` entry.
-- Avoid committing large or generated files: `.venv/`, `*.db`, `__pycache__/`, and logs are ignored.
-- If you get API errors, verify credentials and consider rate limits.
+- Keep API keys out of version control; use `.env` locally and a secret manager in production.
+- Make sure `.gitignore` excludes `.venv`, `*.db`, `__pycache__/`, and logs.
+- API services enforce rate limits — lower collection `limit` values when you see quota errors.
 
 ---
 
 ## Deployment hints
 
-- A `Procfile` and `runtime.txt` are included for Heroku deployment. Store secrets with `heroku config:set` rather than committing them.
-- For production, consider using a managed database and proper secrets management.
+- Heroku: the repo includes a `Procfile` and `runtime.txt`. Use `heroku config:set` to add credentials (do not commit `.env`).
+- Production: swap SQLite for a managed DB (Postgres) and use environment secrets or a vault.
 
 ---
 
 ## Contributing
 
-Contributions are welcome. For small changes, open a Pull Request with a clear description and tests where appropriate.
+Contributions welcome. Open a PR with a clear description and small, focused changes. If you add new dependencies, update `requirements.txt`.
 
 ---
 
 ## License
 
-MIT License. See `LICENSE` for details.
+MIT. See `LICENSE` for details.
 
 ---
 
-If you'd like, I can:
-- remove any remaining emoji characters across code files, or
-- further polish the dashboard layout and color theme, or
-- create a short `FILES.md` that documents each main file in one paragraph.
+If you want further changes I can:
 
-Which of these would you like me to do next?
+- remove remaining emoji characters across the repository, or
+- polish the dashboard theme/layout, or
+- generate a `FILES.md` describing each main file in one paragraph.
+
+Tell me which and I will implement it and (optionally) push to your GitHub remote.
             id='sentiment-over-time',
             figure=create_sentiment_timeline(df)
         )
@@ -889,6 +891,3 @@ This project is licensed under the MIT License - feel free to use it for learnin
 *Last Updated: November 2025*  
 *Version: 1.0.0 (Windows Edition)*  
 *Platform: Windows 10/11*
-=======
->>>>>>> ac04673bd7229e391784dc85fdfd748d4e0090f7
-
