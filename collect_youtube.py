@@ -18,14 +18,14 @@ def collect_youtube_comments(query, limit=1000):
     Returns:
         DataFrame with comment data
     """
-    print(f"📥 Collecting YouTube comments for: '{query}'...")
+    print(f"[YOUTUBE] Collecting YouTube comments for: '{query}'...")
     
     # Build YouTube API client
     try:
         youtube = build('youtube', 'v3', developerKey=os.getenv('YOUTUBE_API_KEY'))
-        print("✓ YouTube API connected successfully!")
+        print("[OK] YouTube API connected successfully!")
     except Exception as e:
-        print(f"✗ YouTube API error: {e}")
+        print(f"[ERROR] YouTube API error: {e}")
         print("Check your .env file and YouTube API key")
         return pd.DataFrame()
     
@@ -38,16 +38,16 @@ def collect_youtube_comments(query, limit=1000):
             type='video'
         ).execute()
     except Exception as e:
-        print(f"✗ Error searching videos: {e}")
+        print(f"[ERROR] Error searching videos: {e}")
         return pd.DataFrame()
     
     if not search_response.get('items'):
-        print("✗ No videos found for that query")
+        print("[ERROR] No videos found for that query")
         return pd.DataFrame()
     
     video_id = search_response['items'][0]['id']['videoId']
     video_title = search_response['items'][0]['snippet']['title']
-    print(f"📹 Found video: '{video_title}'")
+    print(f"[FOUND] Found video: '{video_title}'")
     
     # Step 2: Get comments from that video
     comments_data = []
@@ -73,11 +73,11 @@ def collect_youtube_comments(query, limit=1000):
                 'url': f"https://youtube.com/watch?v={video_id}&lc={item['id']}"
             })
     except Exception as e:
-        print(f"✗ Error getting comments (may be disabled): {e}")
+        print(f"[ERROR] Error getting comments (may be disabled): {e}")
         return pd.DataFrame()
     
     df = pd.DataFrame(comments_data)
-    print(f"✓ Collected {len(df)} comments")
+    print(f"[OK] Collected {len(df)} comments")
     return df
 
 if __name__ == "__main__":
@@ -87,4 +87,4 @@ if __name__ == "__main__":
     if not df.empty:
         filename = f"youtube_{youtube_vid.replace(' ', '_')}.csv"
         df.to_csv('youtube_data.csv', index=False)
-        print("✓ Saved to youtube_data.csv")
+        print("[OK] Saved to youtube_data.csv")

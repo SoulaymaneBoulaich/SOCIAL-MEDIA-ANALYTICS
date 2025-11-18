@@ -17,7 +17,7 @@ class SocialMediaDB:
         
         self.db_name = db_name
         self.db_path = os.path.join(os.getcwd(), db_name)
-        print(f"\n📁 Database: {self.db_name}")
+        print(f"\n[Database] {self.db_name}")
         self.create_tables()
     
     def create_tables(self):
@@ -84,12 +84,12 @@ class SocialMediaDB:
         
         conn.commit()
         conn.close()
-        print('✓ All tables created successfully.')
+        print('[OK] All tables created successfully.')
     
     def insert_posts(self, df):
         """INSERT POSTS INTO APPROPRIATE TABLES BASED ON PLATFORM."""
         if df.empty:
-            print("⚠ No new posts to insert.")
+            print("[WARNING] No new posts to insert.")
             return
         
         conn = sqlite3.connect(self.db_path)
@@ -103,12 +103,12 @@ class SocialMediaDB:
             if not reddit_df.empty:
                 reddit_df_clean = reddit_df.drop('platform', axis=1, errors='ignore')
                 reddit_df_clean.to_sql('reddit_posts', conn, if_exists='append', index=False)
-                print(f"   ✓ Inserted {len(reddit_df)} Reddit posts")
+                print(f"   [OK] Inserted {len(reddit_df)} Reddit posts")
             # Insert YouTube posts
             if not youtube_df.empty:
                 youtube_df_clean = youtube_df.drop('platform', axis=1, errors='ignore')
                 youtube_df_clean.to_sql('youtube_posts', conn, if_exists='append', index=False)
-                print(f"   ✓ Inserted {len(youtube_df)} YouTube posts")
+                print(f"   [OK] Inserted {len(youtube_df)} YouTube posts")
             
             # Remove duplicates from each table
             self._remove_duplicates(conn)
@@ -117,10 +117,10 @@ class SocialMediaDB:
             self._insert_summary_stats(conn, df)
             
             conn.commit()
-            print(f"\n✅ Total {len(df)} posts successfully stored in database!")
+            print(f"\n[SUCCESS] Total {len(df)} posts successfully stored in database!")
             
         except Exception as e:
-            print(f"❌ Error inserting posts: {e}")
+            print(f"[ERROR] Error inserting posts: {e}")
             conn.rollback()
         finally:
             conn.close()

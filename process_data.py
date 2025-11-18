@@ -40,7 +40,7 @@ def process_data(df):
     if df.empty:
         return df
         
-    print(f"⚙ Processing {len(df)} posts...")
+    print(f"[PROCESSING] Processing {len(df)} posts...")
     
     # Make sure 'title' column exists (Twitter/YouTube don't have titles)
     if 'title' not in df.columns:
@@ -59,5 +59,5 @@ def process_data(df):
     # Remove posts with very short text (less than 10 characters)
     df = df[df['full_text'].str.len() > 10]
     
-    print(f"✓ {len(df)} posts remaining after processing")
+    print(f"[OK] {len(df)} posts remaining after processing")
     return df

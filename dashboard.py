@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html
+from dash import dcc, html, Input, Output, State
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
@@ -8,25 +8,30 @@ import glob
 from datetime import datetime
 
 # ============================================================================
-# CONFIGURATION & INITIALIZATION
+# PROFESSIONAL COLOR PALETTE & CONFIGURATION
 # ============================================================================
 
-# Color Palette - Modern Dark Theme
-COLORS = {
-    'bg_dark': '#0F1419',
-    'bg_light': '#1A1F2E',
-    'primary': '#00D9FF',
-    'success': '#10B981',
-    'warning': '#F59E0B',
-    'danger': '#EF4444',
-    'text_primary': '#FFFFFF',
-    'text_secondary': '#9CA3AF',
-    'border': '#374151'
+THEME = {
+    'primary': '#1E88E5',      # Professional Blue
+    'secondary': '#43A047',    # Success Green
+    'accent': '#FB8C00',       # Accent Orange
+    'danger': '#E53935',       # Danger Red
+    'warning': '#FDD835',      # Warning Yellow
+    
+    'bg_primary': '#FFFFFF',   # White
+    'bg_secondary': '#F5F5F5', # Light Gray
+    'bg_tertiary': '#EEEEEE',  # Medium Gray
+    
+    'text_primary': '#212121',    # Dark Text
+    'text_secondary': '#616161',  # Gray Text
+    'text_light': '#FFFFFF',      # White Text
+    
+    'border': '#BDBDBD',       # Border Color
+    'shadow': 'rgba(0, 0, 0, 0.1)'
 }
 
-# Initialize Dash app with external styling
+# Initialize Dash app
 app = dash.Dash(__name__, external_stylesheets=[])
-
 
 # ============================================================================
 # DATABASE LOADING
@@ -37,14 +42,13 @@ def find_latest_db():
     dbs = sorted(glob.glob('social_media_*.db'), reverse=True)
     return dbs[0] if dbs else None
 
-
 db_file = find_latest_db()
 if db_file:
     db = SocialMediaDB(db_file)
-    print(f"✅ Database loaded: {db_file}")
+    print(f"[DATABASE] Database loaded: {db_file}")
 else:
     db = SocialMediaDB()
-    print("⚠️  New database created")
+    print("[DATABASE] New database created")
 
 df = db.get_all_posts()
 
@@ -58,6 +62,38 @@ def _safe_count(df, label_value):
         return 0
     return int(df['sentiment_label'].eq(label_value).sum())
 
+def create_stat_card(label, value, color, icon_char=""):
+    """Reusable professional statistic card component"""
+    return html.Div([
+        html.Div([
+            html.Span(label, style={
+                'color': THEME['text_secondary'],
+                'fontSize': '12px',
+                'fontWeight': '600',
+                'textTransform': 'uppercase',
+                'letterSpacing': '1px',
+                'display': 'block',
+                'marginBottom': '8px'
+            }),
+            html.H2(str(value), style={
+                'color': color,
+                'fontSize': '36px',
+                'fontWeight': '700',
+                'margin': '0',
+                'lineHeight': '1'
+            })
+        ], style={
+            'padding': '20px',
+        })
+    ], style={
+        'backgroundColor': THEME['bg_primary'],
+        'border': f'2px solid {color}',
+        'borderRadius': '8px',
+        'boxShadow': THEME['shadow'],
+        'flex': '1',
+        'minWidth': '150px',
+        'transition': 'transform 0.2s, box-shadow 0.2s',
+    })
 
 def create_sentiment_by_platform(df):
     """Stacked bar chart of sentiment distribution by platform"""
@@ -66,11 +102,10 @@ def create_sentiment_by_platform(df):
     
     sentiment_counts = df.groupby(['platform', 'sentiment_label']).size().reset_index(name='count')
     
-    # Map sentiment to colors
     color_map = {
-        'positive': COLORS['success'],
-        'neutral': COLORS['primary'],
-        'negative': COLORS['danger']
+        'positive': THEME['secondary'],
+        'neutral': THEME['primary'],
+        'negative': THEME['danger']
     }
     
     fig = px.bar(
@@ -80,24 +115,33 @@ def create_sentiment_by_platform(df):
         color='sentiment_label',
         title='Sentiment Distribution by Platform',
         color_discrete_map=color_map,
-        barmode='stack',
-        labels={'count': 'Number of Posts', 'platform': 'Platform'}
+        barmode='group',
+        labels={'count': 'Posts', 'platform': 'Platform', 'sentiment_label': 'Sentiment'}
     )
     
     fig.update_layout(
-        plot_bgcolor=COLORS['bg_light'],
-        paper_bgcolor=COLORS['bg_dark'],
-        font=dict(color=COLORS['text_primary'], family='Arial, sans-serif', size=12),
-        title=dict(font=dict(size=18, color=COLORS['text_primary'])),
-        hovermode='x unified',
+        plot_bgcolor=THEME['bg_secondary'],
+        paper_bgcolor=THEME['bg_primary'],
+        font=dict(color=THEME['text_primary'], family='Segoe UI, Arial, sans-serif', size=11),
+        title=dict(font=dict(size=16, color=THEME['text_primary']), x=0.5),
+        hovermode='x',
         margin=dict(l=50, r=50, t=80, b=50),
-        xaxis=dict(showgrid=False, gridcolor=COLORS['border']),
-        yaxis=dict(showgrid=True, gridcolor=COLORS['border']),
-        legend=dict(bgcolor='rgba(0,0,0,0)', bordercolor=COLORS['border'])
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor=THEME['bg_tertiary']),
+        legend=dict(
+            bgcolor='rgba(255,255,255,0.8)',
+            bordercolor=THEME['border'],
+            borderwidth=1,
+            orientation='v',
+            yanchor='top',
+            y=0.99,
+            xanchor='left',
+            x=0.01
+        ),
+        height=400
     )
     
     return fig
-
 
 def create_sentiment_timeline(df):
     """Line chart showing sentiment trends over time"""
@@ -111,34 +155,44 @@ def create_sentiment_timeline(df):
     timeline_data = df_copy.groupby(['date', 'sentiment_label']).size().reset_index(name='count')
     
     color_map = {
-        'positive': COLORS['success'],
-        'neutral': COLORS['primary'],
-        'negative': COLORS['danger']
+        'positive': THEME['secondary'],
+        'neutral': THEME['primary'],
+        'negative': THEME['danger']
     }
     
-    fig = px.line(
+    fig = px.area(
         timeline_data,
         x='date',
         y='count',
         color='sentiment_label',
         title='Sentiment Trends Over Time',
         color_discrete_map=color_map,
-        markers=True
+        labels={'count': 'Posts', 'date': 'Date'}
     )
     
     fig.update_layout(
-        plot_bgcolor=COLORS['bg_light'],
-        paper_bgcolor=COLORS['bg_dark'],
-        font=dict(color=COLORS['text_primary'], family='Arial, sans-serif', size=12),
-        title=dict(font=dict(size=18, color=COLORS['text_primary'])),
-        hovermode='x unified',
+        plot_bgcolor=THEME['bg_secondary'],
+        paper_bgcolor=THEME['bg_primary'],
+        font=dict(color=THEME['text_primary'], family='Segoe UI, Arial, sans-serif', size=11),
+        title=dict(font=dict(size=16, color=THEME['text_primary']), x=0.5),
+        hovermode='x',
         margin=dict(l=50, r=50, t=80, b=50),
-        xaxis=dict(showgrid=True, gridcolor=COLORS['border']),
-        yaxis=dict(showgrid=True, gridcolor=COLORS['border'])
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=True, gridcolor=THEME['bg_tertiary']),
+        legend=dict(
+            bgcolor='rgba(255,255,255,0.8)',
+            bordercolor=THEME['border'],
+            borderwidth=1,
+            orientation='h',
+            yanchor='bottom',
+            y=1.02,
+            xanchor='right',
+            x=1
+        ),
+        height=350
     )
     
     return fig
-
 
 def create_platform_pie(df):
     """Pie chart showing post distribution across platforms"""
@@ -152,90 +206,139 @@ def create_platform_pie(df):
         platform_counts,
         values='count',
         names='platform',
-        title='Posts by Platform',
-        color_discrete_sequence=[COLORS['danger'], COLORS['primary'], COLORS['success']]
+        title='Distribution by Platform',
+        color_discrete_sequence=[THEME['primary'], THEME['secondary'], THEME['accent']]
     )
     
     fig.update_layout(
-        plot_bgcolor=COLORS['bg_light'],
-        paper_bgcolor=COLORS['bg_dark'],
-        font=dict(color=COLORS['text_primary'], family='Arial, sans-serif', size=12),
-        title=dict(font=dict(size=18, color=COLORS['text_primary'])),
-        margin=dict(l=50, r=50, t=80, b=50)
+        plot_bgcolor=THEME['bg_primary'],
+        paper_bgcolor=THEME['bg_primary'],
+        font=dict(color=THEME['text_primary'], family='Segoe UI, Arial, sans-serif', size=11),
+        title=dict(font=dict(size=16, color=THEME['text_primary']), x=0.5),
+        margin=dict(l=50, r=50, t=80, b=50),
+        showlegend=True,
+        legend=dict(
+            bgcolor='rgba(255,255,255,0.8)',
+            bordercolor=THEME['border'],
+            borderwidth=1
+        ),
+        height=350
     )
     
     return fig
 
+def create_sentiment_gauge(df, platform_filter=None):
+    """Create gauge chart showing overall sentiment"""
+    if df.empty:
+        avg_sentiment = 0
+    else:
+        if platform_filter and platform_filter != 'all':
+            df_filtered = df[df['platform'] == platform_filter]
+        else:
+            df_filtered = df
+        
+        if df_filtered.empty:
+            avg_sentiment = 0
+        else:
+            avg_sentiment = df_filtered['sentiment_score'].mean()
+    
+    # Convert -1 to 1 range to 0 to 100 range
+    gauge_value = (avg_sentiment + 1) * 50
+    
+    fig = go.Figure(go.Indicator(
+        mode = "gauge+number+delta",
+        value = gauge_value,
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        title = {'text': 'Overall Sentiment'},
+        delta = {'reference': 50},
+        gauge = {
+            'axis': {'range': [0, 100]},
+            'bar': {'color': THEME['primary']},
+            'steps': [
+                {'range': [0, 33], 'color': THEME['danger']},
+                {'range': [33, 67], 'color': THEME['warning']},
+                {'range': [67, 100], 'color': THEME['secondary']}
+            ],
+            'threshold': {
+                'line': {'color': THEME['text_primary'], 'width': 2},
+                'thickness': 0.75,
+                'value': 50
+            }
+        }
+    ))
+    
+    fig.update_layout(
+        plot_bgcolor=THEME['bg_primary'],
+        paper_bgcolor=THEME['bg_primary'],
+        font=dict(color=THEME['text_primary'], family='Segoe UI, Arial, sans-serif'),
+        height=300,
+        margin=dict(l=20, r=20, t=60, b=20)
+    )
+    
+    return fig
 
 def create_top_posts_table(df):
     """HTML table showing top 10 posts by score"""
-    if df.empty:
+    if df.empty or 'score' not in df.columns:
         return html.Div(
             "No data available",
-            style={'color': COLORS['text_secondary'], 'padding': '20px', 'textAlign': 'center'}
-        )
-    
-    if 'score' not in df.columns:
-        return html.Div(
-            "No score data available",
-            style={'color': COLORS['text_secondary'], 'padding': '20px', 'textAlign': 'center'}
+            style={'color': THEME['text_secondary'], 'padding': '20px', 'textAlign': 'center'}
         )
     
     top_posts = df.nlargest(10, 'score')[['platform', 'title', 'text', 'score', 'sentiment_label']].copy()
     
-    # Safely truncate text
     top_posts['text'] = top_posts['text'].fillna('').astype(str).str[:100]
     top_posts['title'] = top_posts['title'].fillna('').astype(str).str[:50]
     
-    # Sentiment color mapping
     sentiment_color = {
-        'positive': COLORS['success'],
-        'neutral': COLORS['primary'],
-        'negative': COLORS['danger']
+        'positive': THEME['secondary'],
+        'neutral': THEME['primary'],
+        'negative': THEME['danger']
     }
     
-    # Build table rows
     rows = []
     for idx, (_, row) in enumerate(top_posts.iterrows()):
-        bg_color = COLORS['bg_dark'] if idx % 2 == 0 else COLORS['bg_light']
-        color = sentiment_color.get(row['sentiment_label'], COLORS['text_primary'])
+        bg_color = THEME['bg_secondary'] if idx % 2 == 0 else THEME['bg_primary']
+        color = sentiment_color.get(row['sentiment_label'], THEME['text_primary'])
         
         rows.append(html.Tr([
             html.Td(
                 row['platform'].upper(),
                 style={
-                    'color': COLORS['text_primary'],
+                    'color': THEME['text_primary'],
                     'padding': '12px',
                     'backgroundColor': bg_color,
-                    'borderBottom': f'1px solid {COLORS["border"]}',
-                    'fontWeight': 'bold',
-                    'width': '12%'
+                    'borderBottom': f'1px solid {THEME["border"]}',
+                    'fontWeight': '600',
+                    'fontSize': '12px',
+                    'width': '80px'
                 }
             ),
             html.Td(
                 row['title'] or row['text'],
                 style={
-                    'color': COLORS['text_secondary'],
+                    'color': THEME['text_secondary'],
                     'padding': '12px',
                     'backgroundColor': bg_color,
-                    'borderBottom': f'1px solid {COLORS["border"]}',
+                    'borderBottom': f'1px solid {THEME["border"]}',
                     'maxWidth': '400px',
                     'overflow': 'hidden',
                     'textOverflow': 'ellipsis',
                     'whiteSpace': 'nowrap',
-                    'width': '60%'
+                    'fontSize': '12px'
                 }
             ),
             html.Td(
-                str(row['score']),
+                str(int(row['score'])),
                 style={
-                    'color': COLORS['text_primary'],
+                    'color': THEME['text_primary'],
                     'padding': '12px',
                     'backgroundColor': bg_color,
-                    'borderBottom': f'1px solid {COLORS["border"]}',
+                    'borderBottom': f'1px solid {THEME["border"]}',
                     'textAlign': 'center',
-                    'fontWeight': 'bold',
-                    'width': '10%'
+                    'fontWeight': '600',
+                    'fontSize': '12px',
+                    'width': '70px'
                 }
             ),
             html.Td(
@@ -244,10 +347,11 @@ def create_top_posts_table(df):
                     'color': color,
                     'padding': '12px',
                     'backgroundColor': bg_color,
-                    'borderBottom': f'1px solid {COLORS["border"]}',
+                    'borderBottom': f'1px solid {THEME["border"]}',
                     'textAlign': 'center',
-                    'fontWeight': 'bold',
-                    'width': '18%'
+                    'fontWeight': '600',
+                    'fontSize': '11px',
+                    'width': '100px'
                 }
             )
         ]))
@@ -256,40 +360,39 @@ def create_top_posts_table(df):
         [
             html.Thead(html.Tr([
                 html.Th('Platform', style={
-                    'color': COLORS['primary'],
+                    'color': THEME['text_light'],
                     'padding': '12px',
-                    'backgroundColor': COLORS['bg_light'],
+                    'backgroundColor': THEME['primary'],
                     'textAlign': 'left',
-                    'fontWeight': 'bold',
-                    'borderBottom': f'2px solid {COLORS["primary"]}',
-                    'width': '12%'
+                    'fontWeight': '600',
+                    'fontSize': '12px',
+                    'width': '80px'
                 }),
                 html.Th('Content', style={
-                    'color': COLORS['primary'],
+                    'color': THEME['text_light'],
                     'padding': '12px',
-                    'backgroundColor': COLORS['bg_light'],
+                    'backgroundColor': THEME['primary'],
                     'textAlign': 'left',
-                    'fontWeight': 'bold',
-                    'borderBottom': f'2px solid {COLORS["primary"]}',
-                    'width': '60%'
+                    'fontWeight': '600',
+                    'fontSize': '12px'
                 }),
                 html.Th('Score', style={
-                    'color': COLORS['primary'],
+                    'color': THEME['text_light'],
                     'padding': '12px',
-                    'backgroundColor': COLORS['bg_light'],
+                    'backgroundColor': THEME['primary'],
                     'textAlign': 'center',
-                    'fontWeight': 'bold',
-                    'borderBottom': f'2px solid {COLORS["primary"]}',
-                    'width': '10%'
+                    'fontWeight': '600',
+                    'fontSize': '12px',
+                    'width': '70px'
                 }),
                 html.Th('Sentiment', style={
-                    'color': COLORS['primary'],
+                    'color': THEME['text_light'],
                     'padding': '12px',
-                    'backgroundColor': COLORS['bg_light'],
+                    'backgroundColor': THEME['primary'],
                     'textAlign': 'center',
-                    'fontWeight': 'bold',
-                    'borderBottom': f'2px solid {COLORS["primary"]}',
-                    'width': '18%'
+                    'fontWeight': '600',
+                    'fontSize': '12px',
+                    'width': '100px'
                 })
             ])),
             html.Tbody(rows)
@@ -297,46 +400,12 @@ def create_top_posts_table(df):
         style={
             'width': '100%',
             'borderCollapse': 'collapse',
-            'borderRadius': '8px',
+            'borderRadius': '4px',
             'overflow': 'hidden',
-            'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.3)'
+            'boxShadow': THEME['shadow'],
+            'fontSize': '12px'
         }
     )
-
-
-# ============================================================================
-# STAT CARD COMPONENT
-# ============================================================================
-
-def create_stat_card(label, value, color, icon=None):
-    """Reusable statistic card component"""
-    return html.Div([
-        html.Div(icon, style={'fontSize': '24px', 'marginBottom': '10px'}) if icon else None,
-        html.H3(label, style={
-            'color': COLORS['text_secondary'],
-            'fontSize': '14px',
-            'fontWeight': 'normal',
-            'margin': '0 0 10px 0',
-            'textTransform': 'uppercase',
-            'letterSpacing': '1px'
-        }),
-        html.H2(str(value), style={
-            'color': color,
-            'fontSize': '48px',
-            'fontWeight': 'bold',
-            'margin': '0',
-            'lineHeight': '1'
-        })
-    ], style={
-        'backgroundColor': COLORS['bg_light'],
-        'borderLeft': f'4px solid {color}',
-        'padding': '25px',
-        'borderRadius': '8px',
-        'flex': '1',
-        'minWidth': '200px',
-        'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.2)'
-    })
-
 
 # ============================================================================
 # LAYOUT & APP DEFINITION
@@ -348,126 +417,160 @@ positive_count = _safe_count(df, 'positive')
 negative_count = _safe_count(df, 'negative')
 neutral_count = _safe_count(df, 'neutral')
 
-# Build the app layout
 app.layout = html.Div(
     style={
-        'backgroundColor': COLORS['bg_dark'],
-        'color': COLORS['text_primary'],
-        'fontFamily': 'Arial, sans-serif',
+        'backgroundColor': THEME['bg_secondary'],
+        'color': THEME['text_primary'],
+        'fontFamily': 'Segoe UI, Arial, sans-serif',
         'minHeight': '100vh',
-        'padding': '20px'
+        'padding': '0'
     },
     children=[
         # HEADER
         html.Div([
-            html.H1(
-                '📊 Social Media Analytics Dashboard',
-                style={
-                    'margin': '0',
-                    'fontSize': '32px',
-                    'fontWeight': 'bold',
-                    'background': f'linear-gradient(135deg, {COLORS["primary"]}, {COLORS["success"]})',
-                    'WebkitBackgroundClip': 'text',
-                    'WebkitTextFillColor': 'transparent'
-                }
-            ),
-            html.P(
-                f'Last updated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Database: {db_file or "New"}',
-                style={
-                    'color': COLORS['text_secondary'],
-                    'margin': '10px 0 0 0',
-                    'fontSize': '12px'
-                }
-            )
-        ], style={
-            'marginBottom': '40px',
-            'paddingBottom': '20px',
-            'borderBottom': f'2px solid {COLORS["border"]}'
-        }),
-
-        # STATISTICS CARDS
-        html.Div([
-            create_stat_card('Total Posts', total_posts, COLORS['primary'], '📝'),
-            create_stat_card('Positive', positive_count, COLORS['success'], '😊'),
-            create_stat_card('Negative', negative_count, COLORS['danger'], '😞'),
-            create_stat_card('Neutral', neutral_count, COLORS['warning'], '😐')
-        ], style={
-            'display': 'flex',
-            'gap': '20px',
-            'marginBottom': '40px',
-            'flexWrap': 'wrap'
-        }),
-
-        # CHARTS ROW 1
-        html.Div([
             html.Div([
-                dcc.Graph(
-                    id='sentiment-by-platform',
-                    figure=create_sentiment_by_platform(df),
-                    style={'height': '400px'}
+                html.H1(
+                    'Social Media Analytics Dashboard',
+                    style={
+                        'margin': '0',
+                        'fontSize': '28px',
+                        'fontWeight': '700',
+                        'color': THEME['primary']
+                    }
+                ),
+                html.P(
+                    f'Last updated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")} | Database: {db_file or "New"}',
+                    style={
+                        'color': THEME['text_secondary'],
+                        'margin': '8px 0 0 0',
+                        'fontSize': '12px'
+                    }
                 )
+            ])
+        ], style={
+            'backgroundColor': THEME['bg_primary'],
+            'padding': '24px 40px',
+            'borderBottom': f'1px solid {THEME["border"]}',
+            'boxShadow': THEME['shadow']
+        }),
+
+        # MAIN CONTENT
+        html.Div([
+            # STATISTICS CARDS
+            html.Div([
+                create_stat_card('Total Posts', total_posts, THEME['primary']),
+                create_stat_card('Positive', positive_count, THEME['secondary']),
+                create_stat_card('Neutral', neutral_count, THEME['primary']),
+                create_stat_card('Negative', negative_count, THEME['danger'])
             ], style={
-                'flex': '1',
-                'minWidth': '500px',
-                'backgroundColor': COLORS['bg_light'],
-                'padding': '20px',
-                'borderRadius': '8px',
-                'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.2)'
+                'display': 'flex',
+                'gap': '16px',
+                'marginBottom': '24px',
+                'flexWrap': 'wrap'
             }),
 
+            # CHARTS ROW 1
             html.Div([
-                dcc.Graph(
-                    id='platform-distribution',
-                    figure=create_platform_pie(df),
-                    style={'height': '400px'}
-                )
+                html.Div([
+                    dcc.Graph(
+                        id='sentiment-by-platform',
+                        figure=create_sentiment_by_platform(df),
+                        config={'displayModeBar': False}
+                    )
+                ], style={
+                    'flex': '2',
+                    'minWidth': '400px',
+                    'backgroundColor': THEME['bg_primary'],
+                    'padding': '20px',
+                    'borderRadius': '8px',
+                    'boxShadow': THEME['shadow']
+                }),
+
+                html.Div([
+                    dcc.Graph(
+                        id='overall-sentiment-gauge',
+                        figure=create_sentiment_gauge(df),
+                        config={'displayModeBar': False}
+                    )
+                ], style={
+                    'flex': '1',
+                    'minWidth': '300px',
+                    'backgroundColor': THEME['bg_primary'],
+                    'padding': '20px',
+                    'borderRadius': '8px',
+                    'boxShadow': THEME['shadow']
+                })
             ], style={
-                'flex': '1',
-                'minWidth': '400px',
-                'backgroundColor': COLORS['bg_light'],
+                'display': 'flex',
+                'gap': '16px',
+                'marginBottom': '24px',
+                'flexWrap': 'wrap'
+            }),
+
+            # CHARTS ROW 2
+            html.Div([
+                html.Div([
+                    dcc.Graph(
+                        id='sentiment-over-time',
+                        figure=create_sentiment_timeline(df),
+                        config={'displayModeBar': False}
+                    )
+                ], style={
+                    'backgroundColor': THEME['bg_primary'],
+                    'padding': '20px',
+                    'borderRadius': '8px',
+                    'boxShadow': THEME['shadow']
+                })
+            ], style={
+                'marginBottom': '24px'
+            }),
+
+            # CHARTS ROW 3
+            html.Div([
+                html.Div([
+                    dcc.Graph(
+                        id='platform-distribution',
+                        figure=create_platform_pie(df),
+                        config={'displayModeBar': False}
+                    )
+                ], style={
+                    'flex': '1',
+                    'minWidth': '300px',
+                    'backgroundColor': THEME['bg_primary'],
+                    'padding': '20px',
+                    'borderRadius': '8px',
+                    'boxShadow': THEME['shadow']
+                })
+            ], style={
+                'display': 'flex',
+                'gap': '16px',
+                'marginBottom': '24px'
+            }),
+
+            # TOP POSTS TABLE
+            html.Div([
+                html.H2(
+                    'Top Posts by Engagement',
+                    style={
+                        'color': THEME['text_primary'],
+                        'marginTop': '0',
+                        'marginBottom': '16px',
+                        'fontSize': '18px',
+                        'fontWeight': '600'
+                    }
+                ),
+                create_top_posts_table(df)
+            ], style={
+                'backgroundColor': THEME['bg_primary'],
                 'padding': '20px',
                 'borderRadius': '8px',
-                'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.2)'
+                'boxShadow': THEME['shadow']
             })
-        ], style={
-            'display': 'flex',
-            'gap': '20px',
-            'marginBottom': '40px',
-            'flexWrap': 'wrap'
-        }),
 
-        # CHARTS ROW 2
-        html.Div([
-            dcc.Graph(
-                id='sentiment-over-time',
-                figure=create_sentiment_timeline(df),
-                style={'height': '400px'}
-            )
         ], style={
-            'backgroundColor': COLORS['bg_light'],
-            'padding': '20px',
-            'borderRadius': '8px',
-            'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.2)',
-            'marginBottom': '40px'
-        }),
-
-        # TOP POSTS TABLE
-        html.Div([
-            html.H2(
-                '🏆 Top Posts by Score',
-                style={
-                    'color': COLORS['text_primary'],
-                    'marginTop': '0',
-                    'marginBottom': '20px',
-                    'fontSize': '20px'
-                }
-            ),
-            create_top_posts_table(df)
-        ], style={
-            'backgroundColor': COLORS['bg_light'],
-            'padding': '20px',
-            'borderRadius': '8px',
-            'boxShadow': '0 4px 6px rgba(0, 0, 0, 0.2)'
+            'padding': '24px 40px',
+            'maxWidth': '1400px',
+            'margin': '0 auto'
         })
     ]
 )
@@ -478,15 +581,13 @@ app.layout = html.Div(
 
 if __name__ == '__main__':
     print("\n" + "=" * 70)
-    print("🚀  SOCIAL MEDIA ANALYTICS DASHBOARD")
+    print("SOCIAL MEDIA ANALYTICS DASHBOARD")
     print("=" * 70)
-    print(f"\n✅ Database: {db_file or 'New'}")
-    print(f"📊 Total Posts: {total_posts}")
-    print(f"😊 Positive Sentiments: {positive_count}")
-    print(f"😞 Negative Sentiments: {negative_count}")
-    print(f"😐 Neutral Sentiments: {neutral_count}")
-    print(f"\n🌐 Open your browser at: http://127.0.0.1:8050")
-    print(f"⏹️  Press Ctrl+C to stop the server")
+    print(f"\n[DATABASE] {db_file or 'New'}")
+    print(f"[POSTS] Total Posts: {total_posts}")
+    print(f"[SENTIMENT] Positive: {positive_count}, Neutral: {neutral_count}, Negative: {negative_count}")
+    print(f"\n[SERVER] Open your browser at: http://127.0.0.1:8050")
+    print(f"[SERVER] Press Ctrl+C to stop")
     print("\n" + "=" * 70 + "\n")
     
     app.run(debug=True, host='127.0.0.1', port=8050, use_reloader=False)

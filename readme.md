@@ -165,467 +165,104 @@ python -m pip install --upgrade pip
 
 Now install all the libraries we need (this may take 3-5 minutes):
 
-```cmd
-pip install pandas numpy matplotlib seaborn praw tweepy google-api-python-client textblob vaderSentiment sqlalchemy plotly dash schedule python-dotenv spacy scikit-learn nltk joblib
-```
+# Social Media Analytics (SMA)
 
-**What each package does:**
+A lightweight Python pipeline to collect social posts (Reddit, YouTube, Twitter),
+perform simple text cleaning and sentiment analysis, store results in SQLite,
+and visualize insights in an interactive Plotly Dash dashboard.
 
-| Package | Purpose |
-|---------|---------|
-| `pandas` | Data manipulation and analysis |
-| `numpy` | Numerical computing |
-| `matplotlib`, `seaborn` | Data visualization |
-| `praw` | Reddit API wrapper |
-| `tweepy` | Twitter API wrapper |
-| `google-api-python-client` | YouTube API wrapper |
-| `textblob`, `vaderSentiment` | Sentiment analysis |
-| `sqlalchemy` | Database toolkit |
-| `plotly`, `dash` | Interactive dashboards |
-| `schedule` | Task scheduling |
-| `python-dotenv` | Load environment variables |
-| `spacy` | Advanced NLP |
-| `scikit-learn` | Machine learning |
-| `nltk` | Natural language toolkit |
-| `joblib` | Save/load models |
+This repository contains the core pipeline and utilities used for collecting,
+processing, analyzing, and visualizing social media data for research or
+learning purposes.
 
 ---
 
-### Step 6: Download NLP Models
+## Quick overview
+
+- Language: Python 3.8+
+- DB: SQLite (local files created as `social_media_YYYYMMDD_HHMMSS.db`)
+- Dashboard: Plotly Dash
+- Sentiment: VADER (vaderSentiment)
+
+---
+
+## Quick Start
+
+1. Create and activate a virtual environment:
 
 ```cmd
-python -m spacy download en_core_web_sm
+python -m venv .venv
+.venv\Scripts\activate
 ```
+
+2. Install requirements:
 
 ```cmd
-python -c "import nltk; nltk.download('stopwords'); nltk.download('vader_lexicon')"
+pip install -r requirements.txt
 ```
 
-**What this does:** Downloads pre-trained models needed for natural language processing.
+3. Add your API keys to a local `.env` (do NOT commit it):
 
----
-
-## 🔑 Getting Your API Keys
-
-To collect data from social media platforms, you need API keys. Think of these as special passwords that let your code access their data.
-
-### 🔴 Reddit API (5 minutes)
-
-1. Go to: https://www.reddit.com/prefs/apps
-2. Log in to your Reddit account
-3. Scroll down and click **"Create App"** or **"Create Another App"**
-4. Fill in the form:
-   - **Name:** `My Social Analytics App`
-   - **App type:** Select `script`
-   - **Description:** `Learning data science`
-   - **About URL:** Leave blank
-   - **Redirect URI:** `http://localhost:8080`
-5. Click **"Create app"**
-6. You'll see:
-   - **Client ID** (under the app name, 14 characters)
-   - **Secret** (next to "secret:", 27 characters)
-
-**Save these for later!**
-
----
-
-### 🔵 Twitter API (15 minutes)
-
-1. Go to: https://developer.twitter.com
-2. Click **"Sign up"** (or "Sign in" if you have an account)
-3. Apply for a developer account:
-   - Choose **"Hobbyist"** → **"Exploring the API"**
-   - Fill in the required information
-   - Agree to terms
-4. Once approved (may take minutes to hours), go to the Developer Portal
-5. Create a Project and App:
-   - Click **"Create Project"**
-   - Name it `Social Analytics`
-   - Choose **"Exploring"** as use case
-   - Provide a description
-6. In your app settings, go to **"Keys and tokens"**
-7. Generate a **Bearer Token**
-
-**Save this Bearer Token!**
-
----
-
-### 🔴 YouTube API (10 minutes)
-
-1. Go to: https://console.cloud.google.com
-2. Create a new project:
-   - Click **"Select a project"** at the top
-   - Click **"New Project"**
-   - Name it `Social Analytics`
-   - Click **"Create"**
-3. Enable YouTube Data API:
-   - Go to **"APIs & Services"** → **"Library"**
-   - Search for **"YouTube Data API v3"**
-   - Click on it and click **"Enable"**
-4. Create credentials:
-   - Go to **"APIs & Services"** → **"Credentials"**
-   - Click **"Create Credentials"** → **"API Key"**
-   - Copy your API key
-
-**Save this API Key!**
-
----
-
-### 📝 Create Your .env File
-
-Now create a file to store all your API keys securely.
-
-**Method 1: Using Notepad**
-
-1. Open Notepad (search in Start Menu)
-2. Paste this template and **replace with your actual keys**:
-
-```env
-# Reddit API Credentials
-REDDIT_CLIENT_ID=your_client_id_here
-REDDIT_CLIENT_SECRET=your_secret_here
-REDDIT_USER_AGENT=MyAnalyticsApp/1.0
-
-# Twitter/X API Credentials
-TWITTER_BEARER_TOKEN=your_bearer_token_here
-
-# YouTube API Credentials
-YOUTUBE_API_KEY=your_google_api_key_here
+```
+REDDIT_CLIENT_ID=...
+REDDIT_CLIENT_SECRET=...
+REDDIT_USER_AGENT=...
+TWITTER_BEARER_TOKEN=...
+YOUTUBE_API_KEY=...
 ```
 
-3. Click **File** → **Save As**
-4. Navigate to: `C:\Users\YourName\Documents\social-media-analytics`
-5. Change **"Save as type"** to **"All Files"**
-6. Name the file: `.env` (include the dot!)
-7. Click **Save**
-
-**Method 2: Using Command Prompt**
+4. Run the pipeline to collect data and populate the DB:
 
 ```cmd
-echo # Reddit API Credentials > .env
-echo REDDIT_CLIENT_ID=your_client_id_here >> .env
-echo REDDIT_CLIENT_SECRET=your_secret_here >> .env
-echo REDDIT_USER_AGENT=MyAnalyticsApp/1.0 >> .env
-echo. >> .env
-echo # Twitter/X API Credentials >> .env
-echo TWITTER_BEARER_TOKEN=your_bearer_token_here >> .env
-echo. >> .env
-echo # YouTube API Credentials >> .env
-echo YOUTUBE_API_KEY=your_google_api_key_here >> .env
+python pipeline.py
 ```
 
-Then edit the file with:
+5. Run the dashboard (after pipeline has inserted data):
+
 ```cmd
-notepad .env
+python dashboard.py
 ```
 
-Replace the placeholder values with your actual API keys, then save.
-
-⚠️ **NEVER share your .env file or upload it to GitHub!**
+Open: `http://127.0.0.1:8050`
 
 ---
 
-## 📁 Project Structure Explained
+## Main files (what to edit)
 
-Here's what each file in your project does:
+- `pipeline.py` — main orchestration script (collection → process → sentiment → store).
+- `collect_data.py` — Reddit collector (uses PRAW).
+- `collect_youtube.py` — YouTube comment collector (Google API).
+- `collect_twitter.py` — Twitter collector (optional; may be absent if not used).
+- `process_data.py` — text cleaning and preprocessing helpers.
+- `sentiment_analysis.py` — VADER-based sentiment scoring and labels.
+- `database.py` — SQLite DB manager (create tables, insert, query).
+- `dashboard.py` — Plotly Dash app for visualizations.
 
-```
-social-media-analytics/
-│
-├── venv/                          # Virtual environment (don't touch)
-│
-├── .env                           # Your API keys (SECRET!)
-│
-├── database.py                    # Handles SQLite database operations
-├── collect_data.py                # Collects posts from Reddit
-├── collect_twitter.py             # Collects tweets from Twitter
-├── collect_youtube.py             # Collects comments from YouTube
-├── process_data.py                # Cleans and processes text data
-├── sentiment_analysis.py          # Analyzes sentiment of posts
-├── pipeline.py                    # Main script - runs everything
-├── dashboard.py                   # Interactive web dashboard
-│
-├── requirements.txt               # List of all Python packages
-│
-└── social_media.db               # SQLite database (created after first run)
-```
+Auxiliary scripts:
+
+- `fix_project.py`, `verify_project.py` — local utilities to repair and verify the repo.
+- `test_imports.py` — quick import and environment checker.
 
 ---
 
-## 🏗️ Creating Your Project Files
+## Git / Deployment notes
 
-Now let's create each file with the actual code!
-
-### File 1: `database.py` - Database Manager
-
-**Create the file:**
-```cmd
-notepad database.py
-```
-
-**Copy and paste this code:**
-
-```python
-import sqlite3
-import pandas as pd
-from datetime import datetime
-
-class SocialMediaDB:
-    """
-    This class handles all database operations.
-    It creates tables and stores/retrieves posts.
-    """
-    
-    def __init__(self, db_name='social_media.db'):
-        """Initialize database connection"""
-        self.db_name = db_name
-        self.create_tables()
-    
-    def create_tables(self):
-        """Create the posts table if it doesn't exist"""
-        conn = sqlite3.connect(self.db_name)
-        cursor = conn.cursor()
-        
-        # SQL command to create table
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS posts (
-                id TEXT PRIMARY KEY,
-                platform TEXT NOT NULL,
-                title TEXT,
-                text TEXT,
-                author TEXT,
-                created_utc TIMESTAMP,
-                score INTEGER,
-                num_comments INTEGER,
-                url TEXT,
-                sentiment_score REAL,
-                sentiment_label TEXT
-            )
-        ''')
-        
-        conn.commit()
-        conn.close()
-        print("✓ Database tables created/verified!")
-    
-    def insert_posts(self, df):
-        """Insert new posts into the database"""
-        if df.empty:
-            print("⚠ No data to insert")
-            return
-            
-        conn = sqlite3.connect(self.db_name)
-        
-        try:
-            # Insert data into table
-            df.to_sql('posts', conn, if_exists='append', index=False)
-            
-            # Remove any duplicate posts (same ID)
-            conn.execute('''
-                DELETE FROM posts
-                WHERE rowid NOT IN (
-                    SELECT MIN(rowid)
-                    FROM posts
-                    GROUP BY id
-                )
-            ''')
-            conn.commit()
-            print(f"✓ Inserted/Updated {len(df)} posts in database")
-        except Exception as e:
-            print(f"✗ Error inserting posts: {e}")
-        finally:
-            conn.close()
-    
-    def get_all_posts(self):
-        """Retrieve all posts from the database"""
-        conn = sqlite3.connect(self.db_name)
-        try:
-            df = pd.read_sql_query("SELECT * FROM posts", conn)
-        except Exception as e:
-            print(f"✗ Error reading posts: {e}")
-            df = pd.DataFrame()
-        finally:
-            conn.close()
-        return df
-```
-
-**Save:** Press `Ctrl+S`, then close Notepad
+- Do NOT commit `.env`, `.venv/`, database files, or any credentials.
+- A sample `.gitignore` is included to exclude virtual envs, caches and DB files.
+- To deploy the dashboard to Heroku, ensure `Procfile`, `requirements.txt` and
+  `runtime.txt` are present and use `heroku config:set` for API keys.
 
 ---
 
-### File 2: `collect_data.py` - Reddit Collector
+## Contributing / License
 
-```cmd
-notepad collect_data.py
-```
-
-```python
-import praw
-import pandas as pd
-from datetime import datetime
-import os
-from dotenv import load_dotenv
-
-# Load API keys from .env file
-load_dotenv()
-
-# Try to connect to Reddit API
-try:
-    reddit = praw.Reddit(
-        client_id=os.getenv('REDDIT_CLIENT_ID'),
-        client_secret=os.getenv('REDDIT_CLIENT_SECRET'),
-        user_agent=os.getenv('REDDIT_USER_AGENT')
-    )
-    # Test if connection works
-    reddit.user.me()
-    print("✓ Reddit API connected successfully!")
-except Exception as e:
-    print(f"✗ Reddit API error: {e}")
-    print("Check your .env file and Reddit API credentials")
-    reddit = None
-
-def collect_reddit_posts(subreddit_name, limit=100):
-    """
-    Collect posts from a specific subreddit.
-    
-    Args:
-        subreddit_name: The subreddit to collect from (e.g., 'python')
-        limit: Maximum number of posts to collect
-    
-    Returns:
-        DataFrame with post data
-    """
-    if not reddit:
-        print("✗ Reddit client not initialized")
-        return pd.DataFrame()
-    
-    print(f"📥 Collecting posts from r/{subreddit_name}...")
-    posts_data = []
-    
-    try:
-        subreddit = reddit.subreddit(subreddit_name)
-        
-        # Get hot posts from the subreddit
-        for post in subreddit.hot(limit=limit):
-            posts_data.append({
-                'id': post.id,
-                'platform': 'reddit',
-                'title': post.title,
-                'text': post.selftext,
-                'score': post.score,
-                'num_comments': post.num_comments,
-                'created_utc': datetime.fromtimestamp(post.created_utc),
-                'author': str(post.author),
-                'url': post.url
-            })
-    except Exception as e:
-        print(f"✗ Error collecting Reddit posts: {e}")
-        return pd.DataFrame()
-    
-    df = pd.DataFrame(posts_data)
-    print(f"✓ Collected {len(df)} Reddit posts")
-    return df
-
-# This runs if you execute this file directly
-if __name__ == "__main__":
-    df = collect_reddit_posts('python', limit=50)
-    if not df.empty:
-        df.to_csv('reddit_data.csv', index=False)
-        print("✓ Saved to reddit_data.csv")
-```
-
-**Save and close**
+This project is provided for learning and prototyping. Check each API's Terms
+of Service before using any collected data externally. Use under MIT-style terms.
 
 ---
 
-### File 3: `collect_twitter.py` - Twitter Collector
+Last updated: 2025-11-18
 
-```cmd
-notepad collect_twitter.py
-```
-
-```python
-import tweepy
-import pandas as pd
-from datetime import datetime
-import os
-from dotenv import load_dotenv
-
-# Load API keys
-load_dotenv()
-
-# Try to connect to Twitter API
-try:
-    client = tweepy.Client(bearer_token=os.getenv('TWITTER_BEARER_TOKEN'))
-    print("✓ Twitter API connected successfully!")
-except Exception as e:
-    print(f"✗ Twitter API error: {e}")
-    print("Check your .env file and Twitter Bearer Token")
-    client = None
-
-def collect_twitter_tweets(query, limit=100):
-    """
-    Collect recent tweets matching a search query.
-    
-    Args:
-        query: What to search for (e.g., 'python programming')
-        limit: Maximum number of tweets to collect
-    
-    Returns:
-        DataFrame with tweet data
-    """
-    if not client:
-        print("✗ Twitter client not initialized")
-        return pd.DataFrame()
-    
-    print(f"📥 Collecting tweets for: '{query}'...")
-    tweets_data = []
-    
-    try:
-        # Search for recent tweets
-        response = client.search_recent_tweets(
-            query=query,
-            max_results=min(limit, 100),  # Twitter API limit is 100
-            tweet_fields=['created_at', 'public_metrics', 'author_id']
-        )
-        
-        if response.data:
-            for tweet in response.data:
-                tweets_data.append({
-                    'id': str(tweet.id),
-                    'platform': 'twitter',
-                    'title': '',  # Twitter doesn't have titles
-                    'text': tweet.text,
-                    'author': str(tweet.author_id),
-                    'created_utc': tweet.created_at,
-                    'score': tweet.public_metrics['like_count'],
-                    'num_comments': tweet.public_metrics['reply_count'],
-                    'url': f"https://twitter.com/i/status/{tweet.id}"
-                })
-        else:
-            print("⚠ No tweets found for that query")
-            
-    except Exception as e:
-        print(f"✗ Error collecting tweets: {e}")
-        return pd.DataFrame()
-    
-    df = pd.DataFrame(tweets_data)
-    print(f"✓ Collected {len(df)} tweets")
-    return df
-
-if __name__ == "__main__":
-    df = collect_twitter_tweets('python programming', limit=50)
-    if not df.empty:
-        df.to_csv('twitter_data.csv', index=False)
-        print("✓ Saved to twitter_data.csv")
-```
-
-**Save and close**
-
----
-
-### File 4: `collect_youtube.py` - YouTube Collector
-
-```cmd
 notepad collect_youtube.py
 ```
 

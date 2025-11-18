@@ -43,15 +43,15 @@ def analyze_data(df):
     if df.empty:
         return df
         
-    print("🔍 Analyzing sentiment...")
+    print("[SENTIMENT] Analyzing sentiment...")
     
     # Apply sentiment analysis to each post
     df[['sentiment_score', 'sentiment_label']] = df['full_text'].apply(
         lambda x: pd.Series(analyze_sentiment_vader(x))
     )
     
-    print("✓ Sentiment analysis complete!")
-    print("\n📊 Sentiment Distribution:")
+    print("[OK] Sentiment analysis complete!")
+    print("\n[DISTRIBUTION] Sentiment Distribution:")
     print(df['sentiment_label'].value_counts())
     print()
     

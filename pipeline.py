@@ -12,7 +12,7 @@ def get_user_preferences():
     Ask user which platforms to extract from and what queries to use.
     """
     print("\n" + "="*60)
-    print("📋 DATA EXTRACTION PREFERENCES")
+    print("DATA EXTRACTION PREFERENCES")
     print("="*60)
     
     preferences = {
@@ -33,7 +33,7 @@ def get_user_preferences():
     
     # Check if at least one platform is selected
     if not any([preferences['reddit'], preferences['youtube']]):
-        print("\n⚠ No platforms selected. Exiting...")
+        print("\n[WARNING] No platforms selected. Exiting...")
         return None
     
     # Set limit
@@ -65,29 +65,29 @@ def run_pipeline(preferences=None):
             return
     
     print("\n" + "="*60)
-    print("🚀 STARTING PIPELINE RUN")
+    print("STARTING PIPELINE RUN")
     print("="*60)
     
     # ====== STEP 1: COLLECT DATA ======
-    print("\n📥 Step 1: Collecting data from selected platforms...")
+    print("\n[STEP 1] Collecting data from selected platforms...")
     
     dfs = []
     
     # Collect from Reddit if selected
     if preferences['reddit']:
-        print(f"\n🔴 Extracting from Reddit (r/{preferences['reddit_query']})...")
+        print(f"\n[REDDIT] Extracting from Reddit (r/{preferences['reddit_query']})...")
         df_reddit = collect_reddit_posts(preferences['reddit_query'], limit=preferences['limit'])
         dfs.append(df_reddit)
-        print(f"   ✓ Collected {len(df_reddit)} posts")
+        print(f"   [OK] Collected {len(df_reddit)} posts")
     else:
         df_reddit = pd.DataFrame()
     
     # Collect from YouTube if selected
     if preferences['youtube']:
-        print(f"\n▶️ Extracting from YouTube ('{preferences['youtube_query']}')...")
+        print(f"\n[YOUTUBE] Extracting from YouTube ('{preferences['youtube_query']}')...")
         df_youtube = collect_youtube_comments(preferences['youtube_query'], limit=preferences['limit'])
         dfs.append(df_youtube)
-        print(f"   ✓ Collected {len(df_youtube)} comments")
+        print(f"   [OK] Collected {len(df_youtube)} comments")
     else:
         df_youtube = pd.DataFrame()
     
@@ -97,28 +97,28 @@ def run_pipeline(preferences=None):
     else:
         df_all = pd.DataFrame()
     
-    print(f"\n📊 Total collected: {len(df_all)} posts")
+    print(f"\n[SUMMARY] Total collected: {len(df_all)} posts")
     print(f"   - Reddit: {len(df_reddit)} posts")
     print(f"   - YouTube: {len(df_youtube)} comments")
     
     if df_all.empty:
-        print("⚠ No data collected. Exiting...")
+        print("[WARNING] No data collected. Exiting...")
         return
     
     # ====== STEP 2: PROCESS DATA ======
-    print("\n⚙ Step 2: Processing and cleaning data...")
+    print("\n[STEP 2] Processing and cleaning data...")
     df_processed = process_data(df_all)
     
     if df_processed.empty:
-        print("⚠ No data after processing. Exiting...")
+        print("[WARNING] No data after processing. Exiting...")
         return
     
     # ====== STEP 3: ANALYZE SENTIMENT ======
-    print("\n🔍 Step 3: Analyzing sentiment...")
+    print("\n[STEP 3] Analyzing sentiment...")
     df_analyzed = analyze_data(df_processed)
     
     # ====== STEP 4: STORE IN DATABASE ======
-    print("\n💾 Step 4: Storing in database...")
+    print("\n[STEP 4] Storing in database...")
     
     # Select only the columns we want in the database
     db_columns = [
@@ -142,7 +142,7 @@ def run_pipeline(preferences=None):
     
     # Display summary statistics
     print("\n" + "="*60)
-    print("📊 SUMMARY STATISTICS")
+    print("SUMMARY STATISTICS")
     print("="*60)
     stats_df = db.get_summary_stats()
     if not stats_df.empty:
@@ -150,12 +150,12 @@ def run_pipeline(preferences=None):
             print(f"\n{row['platform'].upper()}:")
             print(f"   Total Posts: {row['total_posts']}")
             print(f"   Avg Sentiment: {row['avg_sentiment']:.3f}")
-            print(f"   😊 Positive: {row['positive_count']} | 😐 Neutral: {row['neutral_count']} | 😞 Negative: {row['negative_count']}")
+            print(f"   Positive: {row['positive_count']} | Neutral: {row['neutral_count']} | Negative: {row['negative_count']}")
             print(f"   Avg Score: {row['avg_score']:.1f} | Avg Comments: {row['avg_comments']:.1f}")
     
     print("\n" + "="*60)
-    print("✅ PIPELINE COMPLETE!")
-    print(f"📁 Database saved as: {db.db_name}")
+    print("PIPELINE COMPLETE!")
+    print(f"Database saved as: {db.db_name}")
     print("="*60 + "\n")
 
 if __name__ == "__main__":
