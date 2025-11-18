@@ -1,7 +1,3 @@
-Here is the updated **README.md** with all references to Twitter/Tweepy removed.
-
------
-
 # Social Media Analytics (SMA)
 
 > **A complete, beginner-friendly project that collects data from Reddit and YouTube, analyzes sentiment, and displays beautiful interactive dashboards - optimized for Windows\!**
